@@ -10,6 +10,7 @@ sudo apt install libeigen3-dev
 ```
 ## Usage
 After installation, run the plan_path.sh script. If the code builds without errors, an RViz window will pop up. Provide two points (start and goal) as 2D Nav Goal inputs in RViz, and the planned path will be displayed in red.
+![Demo](images/Demo.gif)
 
 ## Credits and Acknowledgments
 This project uses open-source components from the following repositories:
