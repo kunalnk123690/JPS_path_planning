@@ -31,6 +31,7 @@ class GlobalPlanner {
         ros::NodeHandle nh;
         ros::Subscriber mapSub;
         ros::Subscriber startGoalSub;
+        sensor_msgs::PointCloud2 map;
 
         Visualizer visualizer;
         std::vector<Eigen::Vector3d> startGoal;
@@ -59,16 +60,21 @@ class GlobalPlanner {
         }
 
         inline void mapCallBack(const sensor_msgs::PointCloud2::ConstPtr &msg) {
+            map = *msg;
+            PointCloud_.clear();
+            path_.clear();
+        }
 
+        inline void plan_path(sensor_msgs::PointCloud2 &msg) {
             if (startGoal.size() == 2) {
                 if(PointCloud_.empty()) {
                     Eigen::Matrix<float, 3, -1> cloud1;
-                    EigenPointCloudConversions::PointCloud2ToEigen<float>(*msg, cloud1);
-                    
-                    const float* msg_float_ptr = reinterpret_cast<const float*>(msg->data.data());
-                    auto cloud2 = Eigen::Map<const Eigen::Matrix<float, 4, -1>>(msg_float_ptr, 4, msg->width * msg->height);
-                    
-                    EigenPointCloudConversions::PointCloud2ToVector<double>(*msg, PointCloud_);
+                    EigenPointCloudConversions::PointCloud2ToEigen<float>(msg, cloud1);
+
+                    const float* msg_float_ptr = reinterpret_cast<const float*>(msg.data.data());
+                    auto cloud2 = Eigen::Map<const Eigen::Matrix<float, 4, -1>>(msg_float_ptr, 4, msg.width * msg.height);
+
+                    EigenPointCloudConversions::PointCloud2ToVector<double>(msg, PointCloud_);
                     
 
                     grid_size_ = VoxelGraph::initializeGrid<double>(origin_, max_bounds_, resolution_, grid_);
@@ -98,9 +104,12 @@ class GlobalPlanner {
 
         inline void startGoalCallback(const geometry_msgs::PoseStamped::ConstPtr &msg) {            
             if (startGoal.size() >= 2) {
-                startGoal.clear();
+                startGoal[0] = startGoal[1];
+                startGoal.pop_back();
             }
             startGoal.push_back(Eigen::Vector3d(msg->pose.position.x, msg->pose.position.y, 0.5));
+
+            plan_path(map);
         }        
 
 };
